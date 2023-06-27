@@ -3,6 +3,7 @@ pragma solidity ^0.8.9;
 
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
+import "hardhat/console.sol";
 
 interface IBeGreen {
     function resetAndUpdateLogic(address user) external;
@@ -12,8 +13,9 @@ interface IBeGreen {
     function totalSupply() external view returns (uint256);
 
     function accumulatedWaste(
-        address user
-    ) external view returns (uint256[2] calldata);
+        address user,
+        uint256 index
+    ) external view returns (uint256);
 
     function totalAccumulatedWaste() external view returns (uint256);
 
@@ -23,22 +25,20 @@ interface IBeGreen {
 contract Greenwards is ERC20, Ownable {
     constructor() ERC20("Greenwards", "GWD") {}
 
-    mapping(address => uint) private shares;
     address public beGreen;
 
     function mint(uint256 amount) public onlyOwner {
+        console.log("test sm1");
         IBeGreen beGreenInterface = IBeGreen(beGreen);
         uint256 totalNFTHolders = beGreenInterface.totalSupply();
         uint256 totalAccumulatedWaste = beGreenInterface
             .totalAccumulatedWaste();
 
+        console.log("test sm2");
         for (uint256 i = 0; i < totalNFTHolders; ++i) {
             address holder = beGreenInterface.ownerOf(i);
-            _mint(
-                holder,
-                (amount * beGreenInterface.accumulatedWaste(holder)[0]) /
-                    totalAccumulatedWaste
-            );
+            uint256 accumulated = beGreenInterface.accumulatedWaste(holder, 0);
+            _mint(holder, (amount * accumulated) / totalAccumulatedWaste);
             beGreenInterface.resetAndUpdateLogic(holder);
         }
 
